@@ -4,7 +4,7 @@ X = None
 ROWS = 7
 COLS = 7
 
-
+# A pretty printer for displaying a slitherlink board, along with a partial solution
 def prettyprint(puzzle, solution):
 	symbols_array = [["  "] * (2*COLS+1) for i in range (2*ROWS+1)]
 
