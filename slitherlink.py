@@ -87,36 +87,23 @@ def possible_partial_solve(puzzle, partial_solution):
 			del partial_solution[next_line]
 			return None
 
+
 # Given a puzzle and a partial solution, checks that the partial solution does 
 # not directly break any rules.
 def test_for_violation(puzzle, partial_solution):
 	# Test intersections for no dead ends or forks
-	for i in range(ROWS+1):
-		for j in range(COLS+1):
-			on = 0
-			off = 0
-			empty = 0
-			for line in [((i,j),(i,j+1)),
-			             ((i,j),(i+1,j)),
-			             ((i,j-1),(i,j)),
-			             ((i-1,j),(i,j))]:
-				if line not in set_of_lines:
-					pass
-				elif not line in partial_solution:
-					empty += 1
-				elif partial_solution[line]:
-					on += 1
-				else:
-					off += 1
-			if on > 2 or (empty == 0 and on == 1):
-				return True
+	vertices = [(i, j) for i in range(ROWS+1) for j in range(COLS+1)]
+	for vertex in vertices:
+		if test_for_vertex_violation(puzzle, partial_solution, vertex):
+			return True
 	#Test squares for right number of lines
-	for i in range(ROWS):
-		for j in range(COLS):
-			if test_for_square_violation(puzzle, partial_solution, (i,j)):
-				return True
+	squares = [(i, j) for i in range(ROWS) for j in range(COLS)]
+	for square in squares:
+		if test_for_square_violation(puzzle, partial_solution, square):
+			return True
 	# Test for no two cycles
 	return False
+
 
 # Helper function that determines, for a vertex, if the rule against no 
 # branchings or dead ends has been violated for that vertex.
