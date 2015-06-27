@@ -6,31 +6,41 @@ COLS = 7
 
 # A pretty printer for displaying a slitherlink board, along with a partial solution
 def prettyprint(puzzle, solution):
-	symbols_array = [["  "] * (2*COLS+1) for i in range (2*ROWS+1)]
+	symbols_array = [[""] * (2*COLS+1) for i in range (2*ROWS+1)]
 
 	for i in range(2*ROWS+1):
 		for j in range(2*COLS+1):
 			if i % 2 == 0:
 				if j % 2 == 0:
-					symbols_array[i][j] = "+ "
+					# In this case, we print a vertex
+					symbols_array[i][j] = "+"
 				else:
+					# In this case, we print the solution value for a 
+					# horizontal line
 					if not ((i/2, j/2), (i/2, j/2 + 1)) in solution:
-						symbols_array[i][j] = ". "
+						symbols_array[i][j] = " . "
 					elif solution[((i/2, j/2), (i/2, j/2 + 1))]:
-						symbols_array[i][j] = "- "
+						symbols_array[i][j] = "---"
 					else:
-						symbols_array[i][j] = "  "
+						symbols_array[i][j] = "   "
 			else:
 				if j % 2 == 0:
+					# In this case, we print the solution value for a 
+					# vertical line					
 					if not ((i/2, j/2), (i/2+ 1, j/2 )) in solution:
-						symbols_array[i][j] = ". "
+						symbols_array[i][j] = "."
 					elif solution[((i/2, j/2), (i/2+ 1, j/2 ))]:
-						symbols_array[i][j] = "| "
+						symbols_array[i][j] = "|"
 					else:
-						symbols_array[i][j] = "  "
+						symbols_array[i][j] = " "
 				else:
+					# In this case, we print the puzzle value for the
+					# square
 					if not puzzle[i/2][j/2] == None:
-						symbols_array[i][j] = str(puzzle[i/2][j/2]) + " "
+						symbols_array[i][j] = " " + str(puzzle[i/2][j/2]) + " "
+					else:
+						symbols_array[i][j] = "   "
+
 
 			symbols_array[i][j]
 		
@@ -102,6 +112,8 @@ def test_for_violation(puzzle, partial_solution):
 		if test_for_square_violation(puzzle, partial_solution, square):
 			return True
 	# Test for no two cycles
+
+	# If no violations are found return False
 	return False
 
 
