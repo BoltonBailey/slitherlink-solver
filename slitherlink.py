@@ -113,26 +113,36 @@ def test_for_violation(puzzle, partial_solution):
 	#Test squares for right number of lines
 	for i in range(ROWS):
 		for j in range(COLS):
-			on = 0
-			off = 0
-			empty = 0
-			for line in [((i,j),(i,j+1)),
-			             ((i,j),(i+1,j)),
-			             ((i,j+1),(i+1,j+1)),
-			             ((i+1,j),(i+1,j+1))]:
-				if not line in partial_solution:
-					empty += 1
-				elif partial_solution[line]:
-					on += 1
-				else:
-					off += 1
-			if puzzle[i][j] != None: 
-				if (puzzle[i][j] > on + empty) or (puzzle[i][j] < on):
-					return True
+			if test_for_square_violation(puzzle, partial_solution, (i,j)):
+				return True
 	# Test for no two cycles
 	return False
 
 
+# Helper function that determines, for a square, if the rule for number of 
+# lines around that square has been broken
+def test_for_square_violation(puzzle, partial_solution, square):
+	i, j = square
+	if puzzle[i][j] == None:
+		return False
+	
+	on = 0
+	off = 0
+	empty = 0
+
+	for line in [((i,j),(i,j+1)),
+		         ((i,j),(i+1,j)),
+			     ((i,j+1),(i+1,j+1)),
+			     ((i+1,j),(i+1,j+1))]:
+		if not line in partial_solution:
+			empty += 1
+		elif partial_solution[line]:
+			on += 1
+		else:
+			off += 1
+
+		if (puzzle[i][j] > on + empty) or (puzzle[i][j] < on):
+			return True
 
 if __name__ == "__main__":
 	puzzle = [[3,2,2,2,X,X,X],
