@@ -15,19 +15,19 @@ def prettyprint(puzzle, solution):
 					symbols_array[i][j] = "+ "
 				else:
 					if not ((i/2, j/2), (i/2, j/2 + 1)) in solution:
-						symbols_array[i][j] = "  "
+						symbols_array[i][j] = ". "
 					elif solution[((i/2, j/2), (i/2, j/2 + 1))]:
 						symbols_array[i][j] = "- "
 					else:
-						symbols_array[i][j] = "x "
+						symbols_array[i][j] = "  "
 			else:
 				if j % 2 == 0:
 					if not ((i/2, j/2), (i/2+ 1, j/2 )) in solution:
-						symbols_array[i][j] = "  "
+						symbols_array[i][j] = ". "
 					elif solution[((i/2, j/2), (i/2+ 1, j/2 ))]:
 						symbols_array[i][j] = "| "
 					else:
-						symbols_array[i][j] = "x "
+						symbols_array[i][j] = "  "
 				else:
 					if not puzzle[i/2][j/2] == None:
 						symbols_array[i][j] = str(puzzle[i/2][j/2]) + " "
@@ -125,7 +125,7 @@ def test_for_square_violation(puzzle, partial_solution, square):
 	i, j = square
 	if puzzle[i][j] == None:
 		return False
-	
+
 	on = 0
 	off = 0
 	empty = 0
@@ -141,8 +141,10 @@ def test_for_square_violation(puzzle, partial_solution, square):
 		else:
 			off += 1
 
-		if (puzzle[i][j] > on + empty) or (puzzle[i][j] < on):
-			return True
+	if (puzzle[i][j] > on + empty) or (puzzle[i][j] < on):
+		return True
+	return False
+
 
 if __name__ == "__main__":
 	puzzle = [[3,2,2,2,X,X,X],
