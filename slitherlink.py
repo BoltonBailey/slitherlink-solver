@@ -133,17 +133,18 @@ def test_for_violation(puzzle, partial_solution):
 	return False
 
 
-puzzle = [[3,2,2,2,X,X,X],
-          [2,2,X,3,X,3,2],
-          [X,X,X,X,1,2,3],
-          [X,X,X,X,3,X,2],
-          [3,X,X,1,2,2,3],
-          [2,X,3,X,3,2,X],
-          [2,1,X,1,2,X,3]]
+
+if __name__ == "__main__":
+	puzzle = [[3,2,2,2,X,X,X],
+          	  [2,2,X,3,X,3,2],
+          	  [X,X,X,X,1,2,3],
+          	  [X,X,X,X,3,X,2],
+          	  [3,X,X,1,2,2,3],
+          	  [2,X,3,X,3,2,X],
+          	  [2,1,X,1,2,X,3]]
 
 
+	solution = solve(puzzle)
 
-solution = solve(puzzle)
-
-prettyprint(puzzle, solution)
+	prettyprint(puzzle, solution)
 
