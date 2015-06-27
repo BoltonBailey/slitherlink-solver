@@ -63,9 +63,7 @@ set_of_lines = set(list_of_lines)
 # returns solution if possible, none if not.
 def possible_partial_solve(puzzle, partial_solution):
 	print prettyprint(puzzle, partial_solution)
-	print 
-	print 
-	print
+
 	if test_for_violation(puzzle, partial_solution):
 		return None
 	else:
@@ -89,6 +87,8 @@ def possible_partial_solve(puzzle, partial_solution):
 			del partial_solution[next_line]
 			return None
 
+# Given a puzzle and a partial solution, checks that the partial solution does 
+# not directly break any rules.
 def test_for_violation(puzzle, partial_solution):
 	# Test intersections for no dead ends or forks
 	for i in range(ROWS+1):
@@ -118,6 +118,28 @@ def test_for_violation(puzzle, partial_solution):
 	# Test for no two cycles
 	return False
 
+# Helper function that determines, for a vertex, if the rule against no 
+# branchings or dead ends has been violated for that vertex.
+def test_for_vertex_violation(puzzle, partial_solution, vertex):
+	i, j = vertex
+	on = 0
+	off = 0
+	empty = 0
+	for line in [((i,j),(i,j+1)),
+	             ((i,j),(i+1,j)),
+	             ((i,j-1),(i,j)),
+	             ((i-1,j),(i,j))]:
+		if line not in set_of_lines:
+			pass
+		elif not line in partial_solution:
+			empty += 1
+		elif partial_solution[line]:
+			on += 1
+		else:
+			off += 1
+	if on > 2 or (empty == 0 and on == 1):
+		return True
+	return False
 
 # Helper function that determines, for a square, if the rule for number of 
 # lines around that square has been broken
@@ -144,6 +166,8 @@ def test_for_square_violation(puzzle, partial_solution, square):
 	if (puzzle[i][j] > on + empty) or (puzzle[i][j] < on):
 		return True
 	return False
+
+
 
 
 if __name__ == "__main__":
