@@ -57,8 +57,8 @@ def prettyprint(puzzle, solution):
 
 
 
-def solve(puzzle):
-	list_of_solutions = partial_list_solve(puzzle, {})
+def print_all_solutions(puzzle):
+	list_of_solutions = list_solve(puzzle)
 	if len(list_of_solutions) == 0:
 		print "No solutions found"
 	else:
@@ -81,10 +81,10 @@ set_of_lines = set(list_of_lines)
 
 # returns a list of solutions to the given puzzle that extend the given partial solution
 # Implemented iteratively
-def partial_list_solve(puzzle, partial_solution):
+def list_solve(puzzle):
 
-	#prettyprint(puzzle, partial_solution)
-	partial_solutions = [partial_solution]
+	# Partial solutions initially are just the empty solution
+	partial_solutions = [{}]
 	solutions = []
 
 	while partial_solutions:
@@ -212,5 +212,5 @@ if __name__ == "__main__":
 
 	#puzzle = [[2,2,X],[3,X,3]]
 
-	solve(puzzle)
+	print_all_solutions(puzzle)
 
