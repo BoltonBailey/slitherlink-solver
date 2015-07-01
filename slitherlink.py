@@ -1,8 +1,33 @@
 
+# For convenience
+
 X = None
+
+# Count of rows and columns
 
 ROWS = 7
 COLS = 7
+
+# lists and sets associated with objects in the board
+
+list_of_lines = []
+for i in range(ROWS+1):
+	for j in range(COLS):
+		list_of_lines.append(((i,j),(i,j+1)))
+for i in range(ROWS):
+	for j in range(COLS+1):
+		list_of_lines.append(((i,j),(i+1,j)))
+
+
+list_of_lines = sorted(list_of_lines)
+set_of_lines = set(list_of_lines)
+
+vertices = [(i, j) for i in range(ROWS+1) for j in range(COLS+1)]
+set_of_vertices = set(vertices)
+
+squares = [(i, j) for i in range(ROWS) for j in range(COLS)]
+set_of_squares = set(squares)
+
 
 # A pretty printer for displaying a slitherlink board, along with a partial solution
 def prettyprint(puzzle, solution):
@@ -56,7 +81,7 @@ def prettyprint(puzzle, solution):
 	print
 
 
-
+# Prints out all possible solutions
 def print_all_solutions(puzzle):
 	list_of_solutions = list_solve(puzzle)
 	if len(list_of_solutions) == 0:
@@ -66,18 +91,6 @@ def print_all_solutions(puzzle):
 			prettyprint(puzzle, solution)
 
 
-
-list_of_lines = []
-for i in range(ROWS+1):
-	for j in range(COLS):
-		list_of_lines.append(((i,j),(i,j+1)))
-for i in range(ROWS):
-	for j in range(COLS+1):
-		list_of_lines.append(((i,j),(i+1,j)))
-
-
-list_of_lines = sorted(list_of_lines)
-set_of_lines = set(list_of_lines)
 
 # returns a list of solutions to the given puzzle that extend the given partial solution
 # Implemented iteratively
@@ -92,10 +105,6 @@ def list_solve(puzzle):
 		# Retrieve a partial
 		partial_solution = partial_solutions.pop()
 
-		# If it is a violation, discard immediately
-		if test_for_violation(puzzle, partial_solution):
-			continue
-
 		next_line = None
 		for line in list_of_lines:
 			if line not in partial_solution:
@@ -104,7 +113,7 @@ def list_solve(puzzle):
 
 		# Test to see if the given partial solution is full.
 		if next_line == None:
-			# Since we just tested for violations, this is good. Place in solutions and continue
+			# Since each line added was tested for violations, this is good. Place in solutions and continue
 			solutions.append(partial_solution)
 			continue
 
@@ -113,11 +122,13 @@ def list_solve(puzzle):
 		# We copy partial solution into two new partial solutions, and put them in the list
 		partial_solution_fill = dict(partial_solution)
 		partial_solution_fill[next_line] = True
-		partial_solutions.append(partial_solution_fill)
+		if not line_violation(puzzle, partial_solution_fill, next_line):
+			partial_solutions.append(partial_solution_fill)
 
 		partial_solution_empty = dict(partial_solution)
 		partial_solution_empty[next_line] = False
-		partial_solutions.append(partial_solution_empty)
+		if not line_violation(puzzle, partial_solution_empty, next_line):
+			partial_solutions.append(partial_solution_empty)
 
 	return solutions
 
@@ -126,28 +137,65 @@ def list_solve(puzzle):
 
 # Given a puzzle and a partial solution, checks that the partial solution does 
 # not directly break any rules.
-def test_for_violation(puzzle, partial_solution):
+def violation(puzzle, partial_solution):
 	# Test intersections for no dead ends or forks
-	vertices = [(i, j) for i in range(ROWS+1) for j in range(COLS+1)]
+	
 	for vertex in vertices:
-		if test_for_vertex_violation(puzzle, partial_solution, vertex):
+		if vertex_violation(puzzle, partial_solution, vertex):
 
 			return True
 	#Test squares for right number of lines
-	squares = [(i, j) for i in range(ROWS) for j in range(COLS)]
+	
 	for square in squares:
-		if test_for_square_violation(puzzle, partial_solution, square):
+		if square_violation(puzzle, partial_solution, square):
 
 			return True
 	# Test for no two cycles
+	# TODO
 
 	# If no violations are found return False
 	return False
 
 
+# function that tests a line to see if there is a violation associated with that line
+def line_violation(puzzle, partial_solution, line):
+	assert line in partial_solution
+
+	vertex0 = line[0]
+	i0, j0 = vertex0
+
+	vertex1 = line[1]
+	i1, j1 = vertex1
+
+	# test the vertices
+	if vertex_violation(puzzle, partial_solution, vertex0):
+		return True
+	if vertex_violation(puzzle, partial_solution, vertex1):
+		return True
+
+	# test the squares
+	square0 = vertex0
+	if square0 in set_of_squares:
+		if square_violation(puzzle, partial_solution, square0):
+			return True
+
+	if j1 > j0:
+		square1 = (i0-1, j0)
+	else:
+		square1 = (i0, j0-1)
+
+	if square1 in set_of_squares:
+		if square_violation(puzzle, partial_solution, square1):
+			return True
+
+	# Todo: test against multiple cycles
+
+	return False
+
+
 # Helper function that determines, for a vertex, if the rule against no 
 # branchings or dead ends has been violated for that vertex.
-def test_for_vertex_violation(puzzle, partial_solution, vertex):
+def vertex_violation(puzzle, partial_solution, vertex):
 	i, j = vertex
 	on = 0
 	off = 0
@@ -170,8 +218,11 @@ def test_for_vertex_violation(puzzle, partial_solution, vertex):
 
 # Helper function that determines, for a square, if the rule for number of 
 # lines around that square has been broken
-def test_for_square_violation(puzzle, partial_solution, square):
+def square_violation(puzzle, partial_solution, square):
 	i, j = square
+
+	assert square in set_of_squares
+
 	if puzzle[i][j] == None:
 		return False
 
