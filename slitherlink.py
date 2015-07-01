@@ -62,7 +62,8 @@ def solve(puzzle):
 	if len(list_of_solutions) == 0:
 		print "No solutions found"
 	else:
-		prettyprint(puzzle, list_of_solutions[0])
+		for solution in list_of_solutions:
+			prettyprint(puzzle, solution)
 
 
 
@@ -79,43 +80,44 @@ list_of_lines = sorted(list_of_lines)
 set_of_lines = set(list_of_lines)
 
 # returns a list of solutions to the given puzzle that extend the given partial solution
-# Implemented recursively
+# Implemented iteratively
 def partial_list_solve(puzzle, partial_solution):
 
 	#prettyprint(puzzle, partial_solution)
-
-	next_line = None
-	for line in list_of_lines:
-		if line not in partial_solution:
-			next_line = line
-			break
-
-	# Test to see if the given partial solution is full.
-	if next_line == None:
-
-		# no violations and no more lines. This is the only solution.
-		if test_for_violation(puzzle, partial_solution):
-
-			return []
-		else:
-			# Full with a violation. No solutions.
-			return [partial_solution]
-
-	# At this point, we know that the solution is not full, and line is currently empty
-
-	# We create a list of solutions
+	partial_solutions = [partial_solution]
 	solutions = []
 
-	# We copy partial solution into two new partial solutions that do and do not fill in the line
-	partial_solution_fill = dict(partial_solution)
-	partial_solution_fill[line] = True
-	if not test_for_violation(puzzle, partial_solution_fill):
-		solutions.extend(partial_list_solve(puzzle, partial_solution_fill))
+	while partial_solutions:
 
-	partial_solution_empty = dict(partial_solution)
-	partial_solution_empty[line] = False
-	if not test_for_violation(puzzle, partial_solution_empty):
-		solutions.extend(partial_list_solve(puzzle, partial_solution_empty))
+		# Retrieve a partial
+		partial_solution = partial_solutions.pop()
+
+		# If it is a violation, discard immediately
+		if test_for_violation(puzzle, partial_solution):
+			continue
+
+		next_line = None
+		for line in list_of_lines:
+			if line not in partial_solution:
+				next_line = line
+				break
+
+		# Test to see if the given partial solution is full.
+		if next_line == None:
+			# Since we just tested for violations, this is good. Place in solutions and continue
+			solutions.append(partial_solution)
+			continue
+
+		# At this point, we know that the solution is not full, and line is currently empty
+
+		# We copy partial solution into two new partial solutions, and put them in the list
+		partial_solution_fill = dict(partial_solution)
+		partial_solution_fill[next_line] = True
+		partial_solutions.append(partial_solution_fill)
+
+		partial_solution_empty = dict(partial_solution)
+		partial_solution_empty[next_line] = False
+		partial_solutions.append(partial_solution_empty)
 
 	return solutions
 
