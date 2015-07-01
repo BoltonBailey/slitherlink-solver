@@ -51,11 +51,19 @@ def prettyprint(puzzle, solution):
 			newline += symbols_array[i][j]
 		print newline
 
+	print
+	print
+	print
+
 
 
 def solve(puzzle):
-	current_solution = {}
-	return possible_partial_solve(puzzle, current_solution)
+	list_of_solutions = partial_list_solve(puzzle, {})
+	if len(list_of_solutions) == 0:
+		print "No solutions found"
+	else:
+		prettyprint(puzzle, list_of_solutions[0])
+
 
 
 list_of_lines = []
@@ -70,32 +78,48 @@ for i in range(ROWS):
 list_of_lines = sorted(list_of_lines)
 set_of_lines = set(list_of_lines)
 
-# returns solution if possible, none if not.
-def possible_partial_solve(puzzle, partial_solution):
-	print prettyprint(puzzle, partial_solution)
+# returns a list of solutions to the given puzzle that extend the given partial solution
+# Implemented recursively
+def partial_list_solve(puzzle, partial_solution):
 
-	if test_for_violation(puzzle, partial_solution):
-		return None
-	else:
-		next_line = None
-		for line in list_of_lines:
-			if line not in partial_solution:
-				next_line = line
-				break
-		if next_line == None:
-			# no violations and no more lines. This is correct.
-			return partial_solution
+	#prettyprint(puzzle, partial_solution)
+
+	next_line = None
+	for line in list_of_lines:
+		if line not in partial_solution:
+			next_line = line
+			break
+
+	# Test to see if the given partial solution is full.
+	if next_line == None:
+
+		# no violations and no more lines. This is the only solution.
+		if test_for_violation(puzzle, partial_solution):
+
+			return []
 		else:
-			partial_solution[next_line] = True
-			solution = possible_partial_solve(puzzle, partial_solution)
-			if solution != None:
-				return solution
-			partial_solution[next_line] = False
-			solution = possible_partial_solve(puzzle, partial_solution)
-			if solution != None:
-				return solution
-			del partial_solution[next_line]
-			return None
+			# Full with a violation. No solutions.
+			return [partial_solution]
+
+	# At this point, we know that the solution is not full, and line is currently empty
+
+	# We create a list of solutions
+	solutions = []
+
+	# We copy partial solution into two new partial solutions that do and do not fill in the line
+	partial_solution_fill = dict(partial_solution)
+	partial_solution_fill[line] = True
+	if not test_for_violation(puzzle, partial_solution_fill):
+		solutions.extend(partial_list_solve(puzzle, partial_solution_fill))
+
+	partial_solution_empty = dict(partial_solution)
+	partial_solution_empty[line] = False
+	if not test_for_violation(puzzle, partial_solution_empty):
+		solutions.extend(partial_list_solve(puzzle, partial_solution_empty))
+
+	return solutions
+
+	
 
 
 # Given a puzzle and a partial solution, checks that the partial solution does 
@@ -105,11 +129,13 @@ def test_for_violation(puzzle, partial_solution):
 	vertices = [(i, j) for i in range(ROWS+1) for j in range(COLS+1)]
 	for vertex in vertices:
 		if test_for_vertex_violation(puzzle, partial_solution, vertex):
+
 			return True
 	#Test squares for right number of lines
 	squares = [(i, j) for i in range(ROWS) for j in range(COLS)]
 	for square in squares:
 		if test_for_square_violation(puzzle, partial_solution, square):
+
 			return True
 	# Test for no two cycles
 
@@ -170,6 +196,9 @@ def test_for_square_violation(puzzle, partial_solution, square):
 
 
 if __name__ == "__main__":
+
+
+
 	puzzle = [[3,2,2,2,X,X,X],
           	  [2,2,X,3,X,3,2],
           	  [X,X,X,X,1,2,3],
@@ -179,7 +208,7 @@ if __name__ == "__main__":
           	  [2,1,X,1,2,X,3]]
 
 
-	solution = solve(puzzle)
+	#puzzle = [[2,2,X],[3,X,3]]
 
-	prettyprint(puzzle, solution)
+	solve(puzzle)
 
