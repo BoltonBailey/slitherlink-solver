@@ -348,21 +348,27 @@ class SlitherlinkPuzzle(object):
 		return False
 
 
+def retrive_from_file(filename):
+	""" Given a filename, parses the file to return a slitherlink instance """
+	file = open(filename, "r")
+	for line in file:
+		print line
 
 
 if __name__ == "__main__":
 
 
 
-	puzzle = SlitherlinkPuzzle(
-			 [[3,2,2,2,X,X,X],
-          	  [2,2,X,3,X,3,2],
-          	  [X,X,X,X,1,2,3],
-          	  [X,X,X,X,3,X,2],
-          	  [3,X,X,1,2,2,3],
-          	  [2,X,3,X,3,2,X],
-          	  [2,1,X,1,2,X,3]]
-          	 )
+	puzzle = \
+		SlitherlinkPuzzle(
+			[[3,2,2,2,X,X,X],
+          	 [2,2,X,3,X,3,2],
+          	 [X,X,X,X,1,2,3],
+          	 [X,X,X,X,3,X,2],
+          	 [3,X,X,1,2,2,3],
+          	 [2,X,3,X,3,2,X],
+          	 [2,1,X,1,2,X,3]]
+        )
 
 
 	#puzzle = [[2,2,X],[3,X,3]]
