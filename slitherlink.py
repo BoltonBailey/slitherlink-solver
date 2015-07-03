@@ -66,10 +66,17 @@ class SlitherlinkPuzzle(object):
 
 
 	def prettyprint(self, solution):
-		""" A pretty printer for displaying a puzzle instance, along with a partial solution """
+		""" A pretty printer for displaying a puzzle instance, along with a 
+		partial solution. Partial solutions are represented as dicts that map 
+		from lines to booleans. A line is in the dict only if it has been 
+		determined, in which case it maps to True, or False corresponding to 
+		whether or not the line is in the solution."""
 
 		symbols_array = [[""] * (2*self.cols+1) for i in range (2*self.rows+1)]
 
+		# We populate the symbols array for each vertex, line, and square. 
+		# Each vertex and verticle line is a single character, each box and 
+		# horizontal line 3 characters
 		for i in range(2*self.rows+1):
 			for j in range(2*self.cols+1):
 				if i % 2 == 0:
@@ -106,42 +113,58 @@ class SlitherlinkPuzzle(object):
 
 				symbols_array[i][j]
 			
-		
+		# For each row create a new line, populate it, and print it
 		for i in range(2*self.rows+1):
 			newline = ""
 			for j in range(2*self.cols+1):
 				newline += symbols_array[i][j]
 			print newline
 
+		# Newlines to distinguish boards printed one after the other
 		print
 		print
-		print
+		
 
 
-	# Prints out all possible solutions
+	
 	def print_all_solutions(self):
-		list_of_solutions = self.list_solve()
-		if len(list_of_solutions) == 0:
-			print "No solutions found"
-		else:
-			for solution in list_of_solutions:
-				assert not self.violation(solution)
-				self.prettyprint(solution)
+		""" This method evaluates, then prints out all possible solutions """
+		
+		print "Evaluating all solutions...\n"
+		for solution in self.list_solve():
+			assert not self.violation(solution)
+			self.prettyprint(solution)
+		print "All solutions printed."
 
 
 
-	# returns a list of solutions to the given puzzle that extend the given partial solution
-	# Implemented iteratively
 	def list_solve(self):
+		""" This method computes a list of solutions to the given puzzle, and 
+		returns it"""
+
+		# We use an iterative algorithm:
+		# We a list containing solutions we have found. We also maintain a 
+		# list of partial (not having values for each line) solutions which 
+		# have no contradictions, and from the completion of which every 
+		# remaining solution can be obtained.
+
 
 		# Partial solutions initially are just the empty solution
 		partial_solutions = [{}]
 		solutions = []
 
+		# We iterate until we have exhausted the partial solutions
 		while partial_solutions:
 
-			# Retrieve a partial
+			# Retrieve a partial solution to work with. Our idea is to find 
+			# an undetermined line, and copy the solution twice, in the two 
+			# copies respectively determining the undetermined line as empty 
+			# or filled. This creates two new partial solutions, that between 
+			# them cover all extensions of the original partial solution. We 
+			# then add these back to the partial solution stack, conditional 
+			# on them not introducing contradictions to the board.
 			partial_solution = partial_solutions.pop()
+
 
 			# Find, if possible, an empty line
 			next_line = None
@@ -152,13 +175,17 @@ class SlitherlinkPuzzle(object):
 
 			# Test to see if the given partial solution is full.
 			if next_line == None:
-				# Since each line added was tested for violations, this is good. Place in solutions and continue
+				# The given partial solution is full.
+				# Since each line added was tested for violations, this is 
+				# valid. Place in solutions and continue
 				solutions.append(partial_solution)
 				continue
 
-			# At this point, we know that the solution is not full, and line is currently empty
+			# At this point, we know that the solution is not full, and line 
+			# is currently empty
 
-			# We copy partial solution into two new partial solutions, and put them in the list
+			# We copy partial solution into two new partial solutions, and 
+			# put them in the list
 			partial_solution_fill = dict(partial_solution)
 			partial_solution_fill[next_line] = True
 			if not self.line_violation(partial_solution_fill, next_line):
@@ -173,22 +200,21 @@ class SlitherlinkPuzzle(object):
 
 	
 
-
-	# Given a puzzle and a partial solution, checks that the partial solution does 
-	# not directly break any rules.
 	def violation(self, partial_solution):
+		""" This method, given a partial solution, checks if the partial 
+		solution directly breaks any rules. """
+
 		# Test intersections for no dead ends or forks
-		
 		for vertex in self.vertices:
 			if self.vertex_violation(partial_solution, vertex):
-
 				return True
-		#Test squares for right number of lines
-		
+
+		# Test squares for right number of lines
 		for square in self.squares:
 			if self.square_violation(partial_solution, square):
 
 				return True
+
 		# Test for no two cycles
 		# TODO
 
@@ -196,26 +222,31 @@ class SlitherlinkPuzzle(object):
 		return False
 
 
-	# function that tests a line to see if there is a violation associated with that line
 	def line_violation(self, partial_solution, line):
+		""" This method, given a partial solution and a line, checks if the 
+		determination of that line breaks any rules. """
+
+		# The given line should make sense
 		assert line in partial_solution
 
+		# Unpack the vertices from the line
 		vertex0 = line[0]
 		i0, j0 = vertex0
 
 		vertex1 = line[1]
 		i1, j1 = vertex1
 
+		# Double-check the existence of the vertices
 		assert vertex0 in self.set_of_vertices
 		assert vertex1 in self.set_of_vertices
 
-		# test the vertices
+		# Test the vertices for violations
 		if self.vertex_violation(partial_solution, vertex0):
 			return True
 		if self.vertex_violation(partial_solution, vertex1):
 			return True
 
-		# test the squares
+		# Test the squares
 		square0 = vertex0
 		if square0 in self.set_of_squares:
 			if self.square_violation(partial_solution, square0):
@@ -235,13 +266,20 @@ class SlitherlinkPuzzle(object):
 		return False
 
 
-	# Helper function that determines, for a vertex, if the rule against no 
-	# branchings or dead ends has been violated for that vertex.
 	def vertex_violation(self, partial_solution, vertex):
+		""" This method, given a partial solution and a vertex, checks if the 
+		rule against no branchings or dead ends has been violated for that 
+		vertex. """
+		
+		# Unpack vertex
 		i, j = vertex
-		on = 0
-		off = 0
+
+		# Count the edges from this vertex which are filled, empty and 
+		# undetermined
+		filled = 0
 		empty = 0
+		undetermined = 0
+
 		for line in [((i,j),(i,j+1)),
 		             ((i,j),(i+1,j)),
 		             ((i,j-1),(i,j)),
@@ -249,42 +287,64 @@ class SlitherlinkPuzzle(object):
 			if line not in self.set_of_lines:
 				pass
 			elif not line in partial_solution:
-				empty += 1
+				undetermined += 1
 			elif partial_solution[line]:
-				on += 1
+				filled += 1
 			else:
-				off += 1
-		if on > 2 or (empty == 0 and on == 1):
+				empty += 1
+
+		# If more than two are filled, this is an illegal branch.
+		if filled > 2:
 			return True
+		# If none are undetermined and there is one filled, this is a dead end.
+		if undetermined == 0 and filled == 1:
+			return True
+
+		# No contradiction found
 		return False
 
-	# Helper function that determines, for a square, if the rule for number of 
-	# lines around that square has been broken
+
 	def square_violation(self, partial_solution, square):
+		""" This method, given a partial solution and a square, checks if the 
+		rule for number of lines around that square has been broken. """
+
+		# Unpack the square
 		i, j = square
 
+		# Check the square makes sense
 		assert square in self.set_of_squares
 
+		# If the square is empty, there is no rule to break.
 		if self.board[i][j] == None:
 			return False
 
-		on = 0
-		off = 0
+		# Count the edges adjacent to this square which are filled, empty and 
+		# undetermined
+		filled = 0
 		empty = 0
+		undetermined = 0
 
 		for line in [((i,j),(i,j+1)),
 			         ((i,j),(i+1,j)),
 				     ((i,j+1),(i+1,j+1)),
 				     ((i+1,j),(i+1,j+1))]:
 			if not line in partial_solution:
-				empty += 1
+				undetermined += 1
 			elif partial_solution[line]:
-				on += 1
+				filled += 1
 			else:
-				off += 1
+				empty += 1
 
-		if (self.board[i][j] > on + empty) or (self.board[i][j] < on):
+		# In this case, even filling all undetermined edges, we have not 
+		# enough filled lines
+		if self.board[i][j] > filled + undetermined: 
 			return True
+		# In this case, even emptying all undetermined edges, we have too 
+		# many enough filled lines		
+		if self.board[i][j] < filled:
+			return True
+
+		# No contradiction found
 		return False
 
 
@@ -302,7 +362,7 @@ if __name__ == "__main__":
           	  [3,X,X,1,2,2,3],
           	  [2,X,3,X,3,2,X],
           	  [2,1,X,1,2,X,3]]
-          	  )
+          	 )
 
 
 	#puzzle = [[2,2,X],[3,X,3]]
