@@ -166,21 +166,36 @@ class SlitherlinkPuzzle(object):
 			# on them not introducing contradictions to the board.
 			partial_solution = partial_solutions.pop()
 
-
-			# Find, if possible, an empty line
-			next_line = None
-			for line in self.lines:
-				if line not in partial_solution:
-					next_line = line
-					break
+			self.prettyprint(partial_solution)
 
 			# Test to see if the given partial solution is full.
-			if next_line == None:
+			if len(partial_solution) == len(self.lines):
 				# The given partial solution is full.
 				# Since each line added was tested for violations, this is 
 				# valid. Place in solutions and continue
 				solutions.append(partial_solution)
 				continue
+
+			# Find, now, an empty line
+			next_line = None
+			for line in self.lines:
+				if line not in partial_solution:
+					next_line = line
+					
+					# We check to see if either of the two new dicts we 
+					# create will be eliminated immediately. If so, this is 
+					# favorable, so we break, and choose this line.
+					partial_solution[next_line] = True
+					if self.line_violation(partial_solution, next_line):
+						break
+
+					partial_solution[next_line] = False
+					if self.line_violation(partial_solution, next_line):
+						break
+
+					del partial_solution[next_line]
+
+
 
 			# At this point, we know that the solution is not full, and line 
 			# is currently empty
@@ -201,24 +216,32 @@ class SlitherlinkPuzzle(object):
 
 	
 
-	def violation(self, partial_solution):
-		""" This method, given a partial solution, checks if the partial 
+	def violation(self, complete_solution):
+		""" This method, given a complete solution, checks if the complete 
 		solution directly breaks any rules. """
+
+		assert len(complete_solution) == len(self.lines)
 
 		# Test intersections for no dead ends or forks
 		for vertex in self.vertices:
-			if self.vertex_violation(partial_solution, vertex):
+			if self.vertex_violation(complete_solution, vertex):
 				return True
 
 		# Test squares for right number of lines
 		for square in self.squares:
-			if self.square_violation(partial_solution, square):
+			if self.square_violation(complete_solution, square):
 				return True
 
 		# Test for no two cycles
+
+		# Find a filled line
+
 		for line in self.lines:
-			if self.loop_violation(partial_solution, line):
-				return True
+			if complete_solution[line]:
+				break
+		
+		if self.loop_violation(complete_solution, line):
+			return True
 
 		# If no violations are found return False
 		return False
@@ -491,8 +514,9 @@ def retrive_from_file(filename):
 
 if __name__ == "__main__":
 
-
+ 	print "Beginning retrieval of puzzle..." 
 	puzzle = retrive_from_file("puzzle.html")
+	print "Puzzle created"
 
 	puzzle.print_all_solutions()
 
