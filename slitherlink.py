@@ -5,6 +5,7 @@ X = None
 
 
 
+
 class SlitherlinkPuzzle(object):
 	"""docstring for SlitherlinkPuzzle"""
 
@@ -37,22 +38,22 @@ class SlitherlinkPuzzle(object):
 		# tuple of pairs representing the coordinates of the vertices, with 
 		# the upper left first.
 
-		self.list_of_lines = []
+		self.lines = []
 
-		# First the horizontal list_of_lines
+		# First the horizontal lines
 		for i in range(self.rows+1):
 			for j in range(self.cols):
-				self.list_of_lines.append(((i,j),(i,j+1)))
+				self.lines.append(((i,j),(i,j+1)))
 		# Then the vertical
 		for i in range(self.rows):
 			for j in range(self.cols+1):
-				self.list_of_lines.append(((i,j),(i+1,j)))
+				self.lines.append(((i,j),(i+1,j)))
 
-		self.list_of_lines = sorted(self.list_of_lines)
+		self.lines = sorted(self.lines)
 
 		# We now put these in set form, for quick membership tests
 
-		self.set_of_lines = set(self.list_of_lines)
+		self.set_of_lines = set(self.lines)
 
 
 		# We now create lists and sets for vertices and squares
@@ -168,7 +169,7 @@ class SlitherlinkPuzzle(object):
 
 			# Find, if possible, an empty line
 			next_line = None
-			for line in self.list_of_lines:
+			for line in self.lines:
 				if line not in partial_solution:
 					next_line = line
 					break
@@ -212,11 +213,12 @@ class SlitherlinkPuzzle(object):
 		# Test squares for right number of lines
 		for square in self.squares:
 			if self.square_violation(partial_solution, square):
-
 				return True
 
 		# Test for no two cycles
-		# TODO
+		for line in self.lines:
+			if self.loop_violation(partial_solution, line):
+				return True
 
 		# If no violations are found return False
 		return False
@@ -224,7 +226,8 @@ class SlitherlinkPuzzle(object):
 
 	def line_violation(self, partial_solution, line):
 		""" This method, given a partial solution and a line, checks if the 
-		determination of that line breaks any rules. """
+		determination of that line breaks any vertex or square rules for the 
+		adjacent squares and connected vertices. """
 
 		# The given line should make sense
 		assert line in partial_solution
@@ -261,7 +264,8 @@ class SlitherlinkPuzzle(object):
 			if self.square_violation(partial_solution, square1):
 				return True
 
-		# Todo: test against multiple cycles
+		if self.loop_violation(partial_solution, line):
+			return True
 
 		return False
 
@@ -270,9 +274,6 @@ class SlitherlinkPuzzle(object):
 		""" This method, given a partial solution and a vertex, checks if the 
 		rule against no branchings or dead ends has been violated for that 
 		vertex. """
-		
-		# Unpack vertex
-		i, j = vertex
 
 		# Count the edges from this vertex which are filled, empty and 
 		# undetermined
@@ -280,10 +281,7 @@ class SlitherlinkPuzzle(object):
 		empty = 0
 		undetermined = 0
 
-		for line in [((i,j),(i,j+1)),
-		             ((i,j),(i+1,j)),
-		             ((i,j-1),(i,j)),
-		             ((i-1,j),(i,j))]:
+		for line in get_adjacent_lines(vertex):
 			if line not in self.set_of_lines:
 				pass
 			elif not line in partial_solution:
@@ -347,31 +345,156 @@ class SlitherlinkPuzzle(object):
 		# No contradiction found
 		return False
 
+	def loop_violation(self, partial_solution, line):
+		""" This method, given a partial_solution and a line, determines if that 
+		line is in a loop that is not a solution to the board"""
+
+		if line not in partial_solution or partial_solution[line] == False:
+			return False
+
+		# A running solution of all lines found in the loop
+		loop_solution = {}
+
+		# Iterate around the loop
+		current_line = line
+		loop_solution[line] = True
+		current_vertex = line[1]
+
+		while current_vertex != line[0]:
+			# We first find the next line in the sequence:
+			next_line = None
+			for new_line in get_adjacent_lines(current_vertex):
+				if new_line in partial_solution and partial_solution[new_line]:
+					if new_line != current_line:
+						# This new_line is correct
+						next_line = new_line
+						break
+			
+			# If no next_line was found, we have a dead end, so no loop violation
+			if next_line == None:
+				return False
+			
+			# Now, we change to this new edge, and add it to the loop
+			current_line = next_line
+			loop_solution[current_line] = True
+
+			# We now switch the vertex to the other vertex of the line
+			if current_vertex == current_line[1]:
+				current_vertex = current_line[0]
+			else:
+				current_vertex = current_line[1]
+
+		# We now at this point that there is a loop, and it is represented in the loop solution
+		# We must determine if there are any filled lines in the partial solution outside the loop
+		# And if the loop constitues a valid complete solution.
+
+		for l in partial_solution:
+			if partial_solution[l] and l not in loop_solution:
+				# We have located a filled line outside the loop. This is a violation.
+				return True
+
+		# We now know that the loop contains all filled lines. We must check that the loop solution has no vertex or square violations
+		for l in self.set_of_lines:
+			if l not in loop_solution:
+				loop_solution[l] = False
+
+		assert len(loop_solution) == len(self.lines)
+
+		# Test vertices for no dead ends or forks
+		for vertex in self.vertices:
+			if self.vertex_violation(loop_solution, vertex):
+				return True
+
+		# Test squares for right number of lines
+		for square in self.squares:
+			if self.square_violation(loop_solution, square):
+				return True
+
+		# We have found no violations. This is a valid solution.
+		return False
+
+		
+
+
+
+
+def get_adjacent_lines(vertex):
+	""" Returns a list of lines attached to the given vertex """
+
+	# Unpack the vertex
+	i, j = vertex
+
+	return [((i,j),(i,j+1)),
+		    ((i,j),(i+1,j)),
+		    ((i,j-1),(i,j)),
+		    ((i-1,j),(i,j))]
+
+
+
 
 def retrive_from_file(filename):
-	""" Given a filename, parses the file to return a slitherlink instance """
+	""" Given a filename, parses the file to return a slitherlink instance. 
+	This parser is designed to retrieve from the source code of 
+	puzzle-loop.com """
+	
 	file = open(filename, "r")
+
+	table_line = None
+
 	for line in file:
-		print line
+		if line.startswith("<table onContextMenu=\"return false\" id=\"LoopTable\""):
+			table_line = line
+
+	list_of_inputs = []
+	for i in range(len(table_line)):
+
+		if table_line[i:].startswith("<td align=\"center\" ><"):
+			list_of_inputs.append(X)
+		if table_line[i:].startswith("<td align=\"center\" >0<"):
+			list_of_inputs.append(0)
+		if table_line[i:].startswith("<td align=\"center\" >1<"):
+			list_of_inputs.append(1)
+		if table_line[i:].startswith("<td align=\"center\" >2<"):
+			list_of_inputs.append(2)
+		if table_line[i:].startswith("<td align=\"center\" >3<"):
+			list_of_inputs.append(3)
+
+	size = len(list_of_inputs)
+	if size == 25:
+		rows = 5
+		cols = 5
+	if size == 49:
+		rows = 7
+		cols = 7
+	if size == 100:
+		rows = 10
+		cols = 10
+	if size == 225:
+		rows = 15
+		cols = 15
+	if size == 400:
+		rows = 20
+		cols = 20
+	if size == 750:
+		rows = 30
+		cols = 25
+	if size == 1200:
+		rows = 40
+		cols = 30
+
+	array = [[list_of_inputs[i * cols + j] for j in range(cols)] for i in range(rows)]
+
+	return SlitherlinkPuzzle(array)
+
+
 
 
 if __name__ == "__main__":
 
 
-
-	puzzle = \
-		SlitherlinkPuzzle(
-			[[3,2,2,2,X,X,X],
-          	 [2,2,X,3,X,3,2],
-          	 [X,X,X,X,1,2,3],
-          	 [X,X,X,X,3,X,2],
-          	 [3,X,X,1,2,2,3],
-          	 [2,X,3,X,3,2,X],
-          	 [2,1,X,1,2,X,3]]
-        )
-
-
-	#puzzle = [[2,2,X],[3,X,3]]
+	puzzle = retrive_from_file("puzzle.html")
 
 	puzzle.print_all_solutions()
+
+
 
