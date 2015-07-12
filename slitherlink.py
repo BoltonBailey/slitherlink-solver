@@ -128,7 +128,7 @@ class SlitherlinkPuzzle(object):
 	def print_all_solutions(self):
 		""" This method evaluates, then prints out all possible solutions """
 		
-		print "Finding solution for board"
+		print "Finding solution for board:"
 
 		self.prettyprint({})
 
@@ -138,7 +138,13 @@ class SlitherlinkPuzzle(object):
 		#	assert not self.violation(solution)
 		#	self.prettyprint(solution)
 
-		self.prettyprint(self.add_solve())
+		solution = self.add_solve()
+
+		assert len(solution) == len(self.lines)
+
+		print "Solution found."
+
+		self.prettyprint(solution)
 
 		print "All solutions printed."
 
@@ -224,39 +230,33 @@ class SlitherlinkPuzzle(object):
 
 		solution = {}
 
-		current_radius = 0
-
-		for current_radius in [1,2,1,1,2,1,1,1,1,2,2,1,2,2,1,1,2,1,2,1,2,3,1,2,3,3,3,3,4]:
+		current_radius = 1.9
+		
+		while True:
+			
 			
 
 			for line in self.lines:
-				if line not in solution:
-					self.line_mutate(solution, line, current_radius)
-					if len(solution) == len(self.lines):
-						return solution
+
+				self.radius_mutate(solution, line, current_radius)
+
+				if len(solution) == len(self.lines):
+					return solution
 	
+			current_radius += 0.1
 
 
-		return solution
+	def line_mutate(self, solution, radius_lines):
+		""" This function, given a partial solution, and a list of lines, 
+		finds all possible extensions of that solution to that list of lines. 
+		It then mutates the partial solution to determine all lines that have 
+		the same determination in all possibilities."""
 
+		for line in radius_lines:
+			assert line in self.set_of_lines
 
-	def line_mutate(self, solution, line, radius):
-		""" This function, given a partial solution, a line and an integer 
-		radius, first makes a list of all lines with coordinates within the 
-		radius of the given line. It then makes a list of all possible 
-		partial solutions extending the given partial solution to this list 
-		of lines which do not give contradictions. If the given line is the 
-		same in all of these, the partial solution is mutated to correspond.
-		Otherwise it is not mutated."""
-
-		assert line not in solution
-
-		radius_lines = [l for l in self.lines if (line_distance(l,line) <= radius or l == line)]
-
-
-		found_fill = False
-		found_empty = False
-
+		
+		extended_solutions = []
 		partial_solutions = [dict(solution)]
 
 		while partial_solutions:
@@ -272,10 +272,7 @@ class SlitherlinkPuzzle(object):
 
 			if next_line == None:
 
-				if partial_solution[line]:
-					found_fill = True
-				else:
-					found_empty = True
+				extended_solutions.append(partial_solution)
 				continue
 
 			# At this point, we know that the solution is not full, and line 
@@ -297,19 +294,37 @@ class SlitherlinkPuzzle(object):
 
 		# We now mutate the board
 
-		assert found_fill or found_empty
-
-		if not found_empty:
-			solution[line] = True
+		proven_solution = extended_solutions.pop()
 
 
-		if not found_fill:
-			solution[line] = False
+		for possible_solution in extended_solutions:
+			
+			for line in radius_lines:
+				
+				if line in proven_solution and possible_solution[line] != proven_solution[line]:
+					del proven_solution[line]
 
-		print radius, len(radius_lines), line
-		self.prettyprint(solution)
+		for line in radius_lines:
+			if line in proven_solution:
+				solution[line] = proven_solution[line]
+
+	def radius_mutate(self, solution, line, radius):
 
 
+
+		radius_lines = [l for l in self.lines if line_distance(l, line) <= radius]
+
+		initial_size = len(solution)
+
+		self.line_mutate(solution, radius_lines)
+
+		if len(solution) > initial_size:
+
+			print radius, line
+			self.prettyprint(solution)
+
+			for line in radius_lines:
+				self.radius_mutate(solution, line, radius - 0.1)
 
 	def violation(self, complete_solution):
 		""" This method, given a complete solution, checks if the complete 
@@ -548,21 +563,17 @@ def line_distance(line1, line2):
 
 	# Unpack
 
-	v1a, v1b = line1
-	v2a, v2b = line2
+	x1, y1 = line_center(line1)
+	x2, y2 = line_center(line2)
 
-	distance = vertex_distance(v1a, v2a)
-	distance += vertex_distance(v1a, v2b)
-	distance += vertex_distance(v1b, v2a)
-	distance += vertex_distance(v1b, v2b)
-	distance /= 4
+	dx = x2-x1
+	dy = y2-y1
 
-	return distance
-
-def vertex_distance(vertex1, vertex2):
-	dx = abs(vertex1[0] - vertex2[0])
-	dy = abs(vertex1[1] - vertex2[1])
 	return math.sqrt(dx**2 + dy**2)
+
+def line_center(line):
+	va, vb = line
+	return ((va[0] + vb[0])/2.0, (va[1] + vb[1])/2.0)
 
 
 
