@@ -1,4 +1,6 @@
 
+import math
+
 # For convenience
 
 X = None
@@ -64,8 +66,6 @@ class SlitherlinkPuzzle(object):
 		self.squares = [(i, j) for i in range(self.rows) for j in range(self.cols)]
 		self.set_of_squares = set(self.squares)
 
-
-
 	def prettyprint(self, solution):
 		""" A pretty printer for displaying a puzzle instance, along with a 
 		partial solution. Partial solutions are represented as dicts that map 
@@ -124,20 +124,23 @@ class SlitherlinkPuzzle(object):
 		# Newlines to distinguish boards printed one after the other
 		print
 		print
-		
-
-
 	
 	def print_all_solutions(self):
 		""" This method evaluates, then prints out all possible solutions """
 		
-		print "Evaluating all solutions...\n"
-		for solution in self.list_solve():
-			assert not self.violation(solution)
-			self.prettyprint(solution)
+		print "Finding solution for board"
+
+		self.prettyprint({})
+
+		print "Evaluating solution...\n"
+
+		#for solution in self.list_solve():
+		#	assert not self.violation(solution)
+		#	self.prettyprint(solution)
+
+		self.prettyprint(self.add_solve())
+
 		print "All solutions printed."
-
-
 
 	def list_solve(self):
 		""" This method computes a list of solutions to the given puzzle, and 
@@ -166,7 +169,7 @@ class SlitherlinkPuzzle(object):
 			# on them not introducing contradictions to the board.
 			partial_solution = partial_solutions.pop()
 
-			self.prettyprint(partial_solution)
+			# self.prettyprint(partial_solution)
 
 			# Test to see if the given partial solution is full.
 			if len(partial_solution) == len(self.lines):
@@ -181,20 +184,20 @@ class SlitherlinkPuzzle(object):
 			for line in self.lines:
 				if line not in partial_solution:
 					next_line = line
+					break
 					
 					# We check to see if either of the two new dicts we 
 					# create will be eliminated immediately. If so, this is 
 					# favorable, so we break, and choose this line.
-					partial_solution[next_line] = True
-					if self.line_violation(partial_solution, next_line):
+					partial_solution_copy = dict(partial_solution)
+					partial_solution_copy[next_line] = True
+					if self.line_violation(partial_solution_copy, line):
 						break
 
-					partial_solution[next_line] = False
-					if self.line_violation(partial_solution, next_line):
+					partial_solution_copy = dict(partial_solution)
+					partial_solution_copy[next_line] = False
+					if self.line_violation(partial_solution_copy, line):
 						break
-
-					del partial_solution[next_line]
-
 
 
 			# At this point, we know that the solution is not full, and line 
@@ -215,6 +218,98 @@ class SlitherlinkPuzzle(object):
 		return solutions
 
 	
+	def add_solve(self):
+		""" This method solves the puzzle by creating an empty solution and 
+		iteratively expanding it until it encompasses all lines."""
+
+		solution = {}
+
+		current_radius = 0
+
+		for current_radius in [1,2,1,1,2,1,1,1,1,2,2,1,2,2,1,1,2,1,2,1,2,3,1,2,3,3,3,3,4]:
+			
+
+			for line in self.lines:
+				if line not in solution:
+					self.line_mutate(solution, line, current_radius)
+					if len(solution) == len(self.lines):
+						return solution
+	
+
+
+		return solution
+
+
+	def line_mutate(self, solution, line, radius):
+		""" This function, given a partial solution, a line and an integer 
+		radius, first makes a list of all lines with coordinates within the 
+		radius of the given line. It then makes a list of all possible 
+		partial solutions extending the given partial solution to this list 
+		of lines which do not give contradictions. If the given line is the 
+		same in all of these, the partial solution is mutated to correspond.
+		Otherwise it is not mutated."""
+
+		assert line not in solution
+
+		radius_lines = [l for l in self.lines if (line_distance(l,line) <= radius or l == line)]
+
+
+		found_fill = False
+		found_empty = False
+
+		partial_solutions = [dict(solution)]
+
+		while partial_solutions:
+			partial_solution = partial_solutions.pop()
+		
+			# Find an empty line in the radius
+
+			next_line = None
+			for new_line in radius_lines:
+				if new_line not in partial_solution:
+					next_line = new_line
+					break
+
+			if next_line == None:
+
+				if partial_solution[line]:
+					found_fill = True
+				else:
+					found_empty = True
+				continue
+
+			# At this point, we know that the solution is not full, and line 
+			# is currently empty
+
+			# We copy partial solution into two new partial solutions, and 
+			# put them in the list
+			partial_solution_fill = dict(partial_solution)
+			partial_solution_fill[next_line] = True
+			if not self.line_violation(partial_solution_fill, next_line):
+				partial_solutions.append(partial_solution_fill)
+
+			partial_solution_empty = dict(partial_solution)
+			partial_solution_empty[next_line] = False
+			if not self.line_violation(partial_solution_empty, next_line):
+				partial_solutions.append(partial_solution_empty)
+
+
+
+		# We now mutate the board
+
+		assert found_fill or found_empty
+
+		if not found_empty:
+			solution[line] = True
+
+
+		if not found_fill:
+			solution[line] = False
+
+		print radius, len(radius_lines), line
+		self.prettyprint(solution)
+
+
 
 	def violation(self, complete_solution):
 		""" This method, given a complete solution, checks if the complete 
@@ -245,7 +340,6 @@ class SlitherlinkPuzzle(object):
 
 		# If no violations are found return False
 		return False
-
 
 	def line_violation(self, partial_solution, line):
 		""" This method, given a partial solution and a line, checks if the 
@@ -292,7 +386,6 @@ class SlitherlinkPuzzle(object):
 
 		return False
 
-
 	def vertex_violation(self, partial_solution, vertex):
 		""" This method, given a partial solution and a vertex, checks if the 
 		rule against no branchings or dead ends has been violated for that 
@@ -323,7 +416,6 @@ class SlitherlinkPuzzle(object):
 
 		# No contradiction found
 		return False
-
 
 	def square_violation(self, partial_solution, square):
 		""" This method, given a partial solution and a square, checks if the 
@@ -451,5 +543,26 @@ def get_adjacent_lines(vertex):
 		    ((i,j),(i+1,j)),
 		    ((i,j-1),(i,j)),
 		    ((i-1,j),(i,j))]
+
+def line_distance(line1, line2):
+
+	# Unpack
+
+	v1a, v1b = line1
+	v2a, v2b = line2
+
+	distance = vertex_distance(v1a, v2a)
+	distance += vertex_distance(v1a, v2b)
+	distance += vertex_distance(v1b, v2a)
+	distance += vertex_distance(v1b, v2b)
+	distance /= 4
+
+	return distance
+
+def vertex_distance(vertex1, vertex2):
+	dx = abs(vertex1[0] - vertex2[0])
+	dy = abs(vertex1[1] - vertex2[1])
+	return math.sqrt(dx**2 + dy**2)
+
 
 
