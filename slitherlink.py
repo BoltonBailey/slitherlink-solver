@@ -230,7 +230,7 @@ class SlitherlinkPuzzle(object):
 
 		solution = {}
 
-		current_radius = 1.9
+		current_radius = 0.0
 		
 		while True:
 			
