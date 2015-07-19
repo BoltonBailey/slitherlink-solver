@@ -1,4 +1,6 @@
-import numpy
+
+
+####
 import slitherlink
 
 def retrive_from_file(filename):
