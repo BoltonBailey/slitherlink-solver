@@ -1,6 +1,6 @@
 
 
-####
+#------
 import slitherlink
 
 def retrive_from_file(filename):
