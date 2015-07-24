@@ -230,29 +230,36 @@ class SlitherlinkPuzzle(object):
 
 		solution = {}
 
-		current_radius = 0.0
+		side = 1
 		
 		while True:
-			
 
-			for line in self.lines:
+			for vertex in self.vertices:
 
-				self.radius_mutate(solution, line, current_radius)
+				start_len = len(solution)
+
+				self.box_mutate(solution, vertex, side)
 
 				if len(solution) == len(self.lines):
 					return solution
-	
-			current_radius += 0.1
+
+			side += 1
 
 
-	def line_mutate(self, solution, radius_lines):
+			
+
+
+	def line_mutate(self, solution, line_group):
 		""" This function, given a partial solution, and a list of lines, 
 		finds all possible extensions of that solution to that list of lines. 
 		It then mutates the partial solution to determine all lines that have 
 		the same determination in all possibilities."""
 
-		for line in radius_lines:
-			assert line in self.set_of_lines
+		# Remove illegal/irrelevant lines
+		radius_lines = []
+		for line in line_group:
+			if line in self.set_of_lines and line not in solution:
+				radius_lines.append(line)
 
 		
 		extended_solutions = []
@@ -307,11 +314,20 @@ class SlitherlinkPuzzle(object):
 			if line in proven_solution:
 				solution[line] = proven_solution[line]
 
-	def radius_mutate(self, solution, line, radius):
+	def box_mutate(self, solution, vertex, side):
 
+		side = int(side)
+		i, j = vertex
 
-
-		radius_lines = [l for l in self.lines if line_distance(l, line) <= radius]
+		radius_lines = []
+		for di in range(side+1):
+			for dj in range(side):
+				line1 = ((i + di, j + dj), (i + di, j + dj + 1))
+				radius_lines.append(line1)
+		for di in range(side):
+			for dj in range(side+1):				
+				line2 = ((i + di, j + dj), (i + di + 1, j + dj))
+				radius_lines.append(line2)
 
 		initial_size = len(solution)
 
@@ -319,11 +335,14 @@ class SlitherlinkPuzzle(object):
 
 		if len(solution) > initial_size:
 
-			print radius, line
+			self.box_mutate(solution, (i+1, j+1), side)
+			self.box_mutate(solution, (i+1, j-1), side)
+			self.box_mutate(solution, (i-1, j-1), side)
+			self.box_mutate(solution, (i-1, j+1), side)
+
+			print side, vertex
 			self.prettyprint(solution)
 
-			for line in radius_lines:
-				self.radius_mutate(solution, line, radius - 0.1)
 
 	def violation(self, complete_solution):
 		""" This method, given a complete solution, checks if the complete 
