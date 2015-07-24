@@ -240,7 +240,7 @@ class SlitherlinkPuzzle(object):
 			if line in proven_solution:
 				solution[line] = proven_solution[line]
 
-	def box_mutate(self, solution, vertex, side):
+	def box_mutate(self, solution, vertex, side, recurse_set=set()):
 
 		side = int(side)
 		i, j = vertex
@@ -261,13 +261,20 @@ class SlitherlinkPuzzle(object):
 
 		if len(solution) > initial_size:
 
-			self.box_mutate(solution, (i+1, j+1), side)
-			self.box_mutate(solution, (i+1, j-1), side)
-			self.box_mutate(solution, (i-1, j-1), side)
-			self.box_mutate(solution, (i-1, j+1), side)
+			recurse_set.add((i+1, j+1))
+			recurse_set.add((i+1, j-1))
+			recurse_set.add((i-1, j-1))
+			recurse_set.add((i-1, j+1))
 
 			print side, vertex
 			self.prettyprint(solution)
+
+		if len(recurse_set) == 0:
+			return
+
+		else:
+			next_vertex = recurse_set.pop()
+			self.box_mutate(solution,next_vertex,side,recurse_set)
 
 
 	def violation(self, complete_solution):
