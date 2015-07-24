@@ -234,7 +234,6 @@ class SlitherlinkPuzzle(object):
 		
 		while True:
 			
-			
 
 			for line in self.lines:
 

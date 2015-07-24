@@ -2,6 +2,7 @@
 
 #------
 import slitherlink
+import time
 
 def retrive_from_file(filename):
 	""" Given a filename, parses the file to return a slitherlink instance. 
@@ -62,11 +63,17 @@ def retrive_from_file(filename):
 
 if __name__ == "__main__":
 
+	retrieval_start = time.clock()
+
  	print "Beginning retrieval of puzzle..." 
 	puzzle = retrive_from_file("puzzle.html")
-	print "Puzzle created"
+	print "Puzzle created in", time.clock() - retrieval_start, "seconds" 
+
+	solution_start = time.clock()
 
 	puzzle.print_all_solutions()
+
+	print "Puzzle solved in", time.clock() - solution_start, "seconds"
 
 
 
