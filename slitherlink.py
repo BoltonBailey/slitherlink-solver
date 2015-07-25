@@ -157,17 +157,19 @@ class SlitherlinkPuzzle(object):
 
 		solution = {}
 
-		side = 1
 		
+		side = 0
+		vertex_stack = []
+
 		while True:
 
-			vertex_stack = [v for v in self.vertices]
-
-			start_len_A = len(solution)
+			side += 1
+			vertex_stack = set([(v, side) for v in self.vertices])
 
 			while vertex_stack:
 
-				vertex = vertex_stack.pop()
+				vertex, side = vertex_stack.pop()
+				i, j = vertex
 
 				start_len = len(solution)
 
@@ -178,18 +180,15 @@ class SlitherlinkPuzzle(object):
 
 				if len(solution) > start_len:
 
-					i, j = vertex
-
 					print side, vertex
 					self.prettyprint(solution)
 
-					vertex_stack.append((i+1, j+1))
-					vertex_stack.append((i+1, j-1))
-					vertex_stack.append((i-1, j-1))
-					vertex_stack.append((i-1, j+1))
+					for di in range(-side+1, side+1):
+						for dj in range(-side+1, side+1):
+							vertex_stack.add(((i+di, j+dj), side-1))
 
-			if len(solution) == start_len_A:
-				side += 1
+
+			
 
 
 			
