@@ -1,6 +1,7 @@
 
 import math
 
+
 # For convenience
 
 X = None
@@ -160,7 +161,13 @@ class SlitherlinkPuzzle(object):
 		
 		while True:
 
-			for vertex in self.vertices:
+			vertex_stack = [v for v in self.vertices]
+
+			start_len_A = len(solution)
+
+			while vertex_stack:
+
+				vertex = vertex_stack.pop()
 
 				start_len = len(solution)
 
@@ -169,7 +176,20 @@ class SlitherlinkPuzzle(object):
 				if len(solution) == len(self.lines):
 					return solution
 
-			side += 1
+				if len(solution) > start_len:
+
+					i, j = vertex
+
+					print side, vertex
+					self.prettyprint(solution)
+
+					vertex_stack.append((i+1, j+1))
+					vertex_stack.append((i+1, j-1))
+					vertex_stack.append((i-1, j-1))
+					vertex_stack.append((i-1, j+1))
+
+			if len(solution) == start_len_A:
+				side += 1
 
 
 			
@@ -259,22 +279,7 @@ class SlitherlinkPuzzle(object):
 
 		self.line_mutate(solution, radius_lines)
 
-		if len(solution) > initial_size:
-
-			recurse_set.add((i+1, j+1))
-			recurse_set.add((i+1, j-1))
-			recurse_set.add((i-1, j-1))
-			recurse_set.add((i-1, j+1))
-
-			print side, vertex
-			self.prettyprint(solution)
-
-		if len(recurse_set) == 0:
-			return
-
-		else:
-			next_vertex = recurse_set.pop()
-			self.box_mutate(solution,next_vertex,side,recurse_set)
+		
 
 
 	def violation(self, complete_solution):
