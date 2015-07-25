@@ -157,35 +157,39 @@ class SlitherlinkPuzzle(object):
 
 		solution = {}
 
-		
-		side = 0
-		vertex_stack = []
+		boxes = []
 
 		while True:
 
-			side += 1
-			vertex_stack = set([(v, side) for v in self.vertices])
+			# We find the smallest box length we can
+			side = 0
+			while side < len(boxes) and len(boxes[side]) == 0:
+				side += 1
 
-			while vertex_stack:
+			# If we have no nonempty box set for any size, add a set
+			if side == len(boxes):
+				boxes.append(set([v for v in self.vertices]))
 
-				vertex, side = vertex_stack.pop()
-				i, j = vertex
+			# Now, remove a box
+			vertex = boxes[side].pop()
+			i, j = vertex
 
-				start_len = len(solution)
+			start_len = len(solution)
 
-				self.box_mutate(solution, vertex, side)
+			self.box_mutate(solution, vertex, side)
 
-				if len(solution) == len(self.lines):
-					return solution
+			if len(solution) == len(self.lines):
+				return solution
 
-				if len(solution) > start_len:
+			if len(solution) > start_len:
 
-					print side, vertex
-					self.prettyprint(solution)
+				print side, vertex
+				self.prettyprint(solution)
 
-					for di in range(-side+1, side+1):
-						for dj in range(-side+1, side+1):
-							vertex_stack.add(((i+di, j+dj), side-1))
+				for di in range(-side+1, side+1):
+					for dj in range(-side+1, side+1):
+						if side-1 >= 0:
+							boxes[side-1].add((i+di, j+dj))
 
 
 			
@@ -259,9 +263,8 @@ class SlitherlinkPuzzle(object):
 			if line in proven_solution:
 				solution[line] = proven_solution[line]
 
-	def box_mutate(self, solution, vertex, side, recurse_set=set()):
+	def box_mutate(self, solution, vertex, side):
 
-		side = int(side)
 		i, j = vertex
 
 		radius_lines = []
@@ -273,8 +276,6 @@ class SlitherlinkPuzzle(object):
 			for dj in range(side+1):				
 				line2 = ((i + di, j + dj), (i + di + 1, j + dj))
 				radius_lines.append(line2)
-
-		initial_size = len(solution)
 
 		self.line_mutate(solution, radius_lines)
 
@@ -514,21 +515,7 @@ def get_adjacent_lines(vertex):
 		    ((i,j-1),(i,j)),
 		    ((i-1,j),(i,j))]
 
-def line_distance(line1, line2):
 
-	# Unpack
-
-	x1, y1 = line_center(line1)
-	x2, y2 = line_center(line2)
-
-	dx = x2-x1
-	dy = y2-y1
-
-	return math.sqrt(dx**2 + dy**2)
-
-def line_center(line):
-	va, vb = line
-	return ((va[0] + vb[0])/2.0, (va[1] + vb[1])/2.0)
 
 
 
