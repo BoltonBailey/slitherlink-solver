@@ -198,18 +198,18 @@ class SlitherlinkPuzzle(object):
 			
 
 
-	def line_mutate(self, solution, line_group):
+	def group_mutate(self, solution, line_group):
 		""" This function, given a partial solution, and a list of lines, 
 		finds all possible extensions of that solution to that list of lines. 
 		It then mutates the partial solution to determine all lines that have 
 		the same determination in all possibilities."""
 
 		# Remove illegal/irrelevant lines
-		radius_lines = []
+		valid_lines = []
 		for line in line_group:
 			if line in self.set_of_lines and line not in solution:
-				radius_lines.append(line)
-
+				valid_lines.append(line)
+		line_group = valid_lines
 		
 		extended_solutions = []
 		partial_solutions = [dict(solution)]
@@ -217,10 +217,10 @@ class SlitherlinkPuzzle(object):
 		while partial_solutions:
 			partial_solution = partial_solutions.pop()
 		
-			# Find an empty line in the radius
+			# Find an empty line in the list
 
 			next_line = None
-			for new_line in radius_lines:
+			for new_line in line_group:
 				if new_line not in partial_solution:
 					next_line = new_line
 					break
@@ -254,33 +254,39 @@ class SlitherlinkPuzzle(object):
 
 		for possible_solution in extended_solutions:
 			
-			for line in radius_lines:
+			for line in line_group:
 				
 				if line in proven_solution and possible_solution[line] != proven_solution[line]:
 					del proven_solution[line]
 
-		for line in radius_lines:
+		for line in line_group:
 			if line in proven_solution:
 				solution[line] = proven_solution[line]
+
+
+	def iterative_line_violation(self, partial_solution, line):
+		if self.line_violation(partial_solution, line):
+			return True
+
+		adjacent_lines = get_adjacent_lines(line[0]) + get_adjacent_lines(line[1])
+		
+
 
 	def box_mutate(self, solution, vertex, side):
 
 		i, j = vertex
 
-		radius_lines = []
+		box_lines = []
 		for di in range(side+1):
 			for dj in range(side):
 				line1 = ((i + di, j + dj), (i + di, j + dj + 1))
-				radius_lines.append(line1)
+				box_lines.append(line1)
 		for di in range(side):
 			for dj in range(side+1):				
 				line2 = ((i + di, j + dj), (i + di + 1, j + dj))
-				radius_lines.append(line2)
+				box_lines.append(line2)
 
-		self.line_mutate(solution, radius_lines)
-
-		
-
+		self.group_mutate(solution, box_lines)
 
 	def violation(self, complete_solution):
 		""" This method, given a complete solution, checks if the complete 
