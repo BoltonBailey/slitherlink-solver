@@ -113,7 +113,7 @@ def retrieve_from_site():
 	return retrieve_from_source(page_source)
 
 
-if __name__ == "__main__":
+while __name__ == "__main__":
 
 	retrieval_start = time.clock()
 

@@ -159,6 +159,51 @@ class SlitherlinkPuzzle(object):
 
 		boxes = []
 
+		crosses = set(self.squares)
+
+		while crosses:
+
+			square = crosses.pop()
+				
+			examine = get_box(square, 1)
+			nearby = set()
+
+			i, j = square
+			while (i,j) in self.set_of_squares and self.board[i][j] != None:
+				examine.extend(get_box((i,j), 1))
+				nearby.add((i,j+1))
+				nearby.add((i+1,j))
+				nearby.add((i,j-1))
+				nearby.add((i-1,j))
+				i += 1
+				j += 1
+
+			i, j = square
+			while (i,j) in self.set_of_squares and self.board[i][j] != None:
+				examine.extend(get_box((i,j), 1))
+				nearby.add((i,j+1))
+				nearby.add((i+1,j))
+				nearby.add((i,j-1))
+				nearby.add((i-1,j))
+				i -= 1
+				j += 1
+
+
+			start_len = len(solution)
+
+			self.group_mutate(solution, examine)
+			self.box_mutate(solution, square, 2)
+
+			if len(solution) > start_len:
+				print len(crosses)
+				self.prettyprint(solution)
+				for s in nearby:
+					crosses.add(s)
+
+			if len(solution) == len(self.lines):
+				return solution				
+
+
 		while True:
 
 			# We find the smallest box length we can
@@ -181,15 +226,25 @@ class SlitherlinkPuzzle(object):
 			if len(solution) == len(self.lines):
 				return solution
 
+
+
 			if len(solution) > start_len:
 
 				print side, vertex
+				for b in boxes:
+					print len(b)
+				
 				self.prettyprint(solution)
 
-				for di in range(-side+1, side+1):
-					for dj in range(-side+1, side+1):
-						if side-1 >= 0:
-							boxes[side-1].add((i+di, j+dj))
+				for di in range(-1, side):
+
+					boxes[1].add((i+di, j-1))
+					boxes[1].add((i+di, j+side))
+				
+				for dj in range(-1, side):
+
+					boxes[1].add((i-1, j+dj))
+					boxes[1].add((i+side, j+dj))
 
 
 			
@@ -212,7 +267,7 @@ class SlitherlinkPuzzle(object):
 		line_group = valid_lines
 		
 		extended_solutions = []
-		partial_solutions = [dict(solution)]
+		partial_solutions = [dict(solution)] 
 
 		while partial_solutions:
 			partial_solution = partial_solutions.pop()
@@ -269,24 +324,10 @@ class SlitherlinkPuzzle(object):
 			return True
 
 		adjacent_lines = get_adjacent_lines(line[0]) + get_adjacent_lines(line[1])
-		
-
 
 	def box_mutate(self, solution, vertex, side):
 
-		i, j = vertex
-
-		box_lines = []
-		for di in range(side+1):
-			for dj in range(side):
-				line1 = ((i + di, j + dj), (i + di, j + dj + 1))
-				box_lines.append(line1)
-		for di in range(side):
-			for dj in range(side+1):				
-				line2 = ((i + di, j + dj), (i + di + 1, j + dj))
-				box_lines.append(line2)
-
-		self.group_mutate(solution, box_lines)
+		self.group_mutate(solution, get_box(vertex, side))
 
 	def violation(self, complete_solution):
 		""" This method, given a complete solution, checks if the complete 
@@ -508,7 +549,20 @@ class SlitherlinkPuzzle(object):
 		
 
 
+def get_box(vertex, side):
+	i, j = vertex
 
+	box_lines = []
+	for di in range(side+1):
+		for dj in range(side):
+			line1 = ((i + di, j + dj), (i + di, j + dj + 1))
+			box_lines.append(line1)
+	for di in range(side):
+		for dj in range(side+1):				
+			line2 = ((i + di, j + dj), (i + di + 1, j + dj))
+			box_lines.append(line2)	
+
+	return box_lines
 
 def get_adjacent_lines(vertex):
 	""" Returns a list of lines attached to the given vertex """
