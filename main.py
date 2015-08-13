@@ -113,7 +113,12 @@ def retrieve_from_site():
 	return retrieve_from_source(page_source)
 
 
+i = 0
 while __name__ == "__main__":
+
+	print "Number of puzzles", i
+	i += 1
+
 
 	retrieval_start = time.clock()
 

@@ -157,54 +157,55 @@ class SlitherlinkPuzzle(object):
 
 		solution = {}
 
+
 		boxes = []
 
 		crosses = set(self.squares)
 
-		while crosses:
-
-			square = crosses.pop()
-				
-			examine = get_box(square, 1)
-			nearby = set()
-
-			i, j = square
-			while (i,j) in self.set_of_squares and self.board[i][j] != None:
-				examine.extend(get_box((i,j), 1))
-				nearby.add((i,j+1))
-				nearby.add((i+1,j))
-				nearby.add((i,j-1))
-				nearby.add((i-1,j))
-				i += 1
-				j += 1
-
-			i, j = square
-			while (i,j) in self.set_of_squares and self.board[i][j] != None:
-				examine.extend(get_box((i,j), 1))
-				nearby.add((i,j+1))
-				nearby.add((i+1,j))
-				nearby.add((i,j-1))
-				nearby.add((i-1,j))
-				i -= 1
-				j += 1
-
-
-			start_len = len(solution)
-
-			self.group_mutate(solution, examine)
-			self.box_mutate(solution, square, 2)
-
-			if len(solution) > start_len:
-				print len(crosses)
-				self.prettyprint(solution)
-				for s in nearby:
-					crosses.add(s)
-
-			if len(solution) == len(self.lines):
-				return solution				
-
-
 		while True:
+
+			if crosses:
+
+				square = crosses.pop()
+					
+				examine = get_box(square, 1)
+				nearby = set()
+
+				i, j = square
+				while (i,j) in self.set_of_squares and self.board[i][j] != None:
+					examine.extend(get_box((i,j), 1))
+					nearby.add((i,j+1))
+					nearby.add((i+1,j))
+					nearby.add((i,j-1))
+					nearby.add((i-1,j))
+					i += 1
+					j += 1
+
+				i, j = square
+				while (i,j) in self.set_of_squares and self.board[i][j] != None:
+					examine.extend(get_box((i,j), 1))
+					nearby.add((i,j+1))
+					nearby.add((i+1,j))
+					nearby.add((i,j-1))
+					nearby.add((i-1,j))
+					i -= 1
+					j += 1
+
+
+				start_len = len(solution)
+
+				self.group_mutate(solution, examine)
+				self.box_mutate(solution, square, 2)
+
+				if len(solution) > start_len:
+					print len(crosses)
+					self.prettyprint(solution)
+					for s in nearby:
+						crosses.add(s)
+
+				if len(solution) == len(self.lines):
+					return solution				
+
 
 			# We find the smallest box length we can
 			side = 0
@@ -238,13 +239,13 @@ class SlitherlinkPuzzle(object):
 
 				for di in range(-1, side):
 
-					boxes[1].add((i+di, j-1))
-					boxes[1].add((i+di, j+side))
+					crosses.add((i+di, j-1))
+					crosses.add((i+di, j+side))
 				
 				for dj in range(-1, side):
 
-					boxes[1].add((i-1, j+dj))
-					boxes[1].add((i+side, j+dj))
+					crosses.add((i-1, j+dj))
+					crosses.add((i+side, j+dj))
 
 
 			
