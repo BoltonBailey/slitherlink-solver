@@ -114,10 +114,11 @@ def retrieve_from_site():
 
 
 i = 0
+time_total = 0
 while __name__ == "__main__":
 
 	print "Number of puzzles", i
-	i += 1
+	
 
 
 	retrieval_start = time.clock()
@@ -131,6 +132,10 @@ while __name__ == "__main__":
 	puzzle.print_all_solutions()
 
 	print "Puzzle solved in", time.clock() - solution_start, "seconds"
+
+	i += 1
+	time_total += time.clock() - solution_start
+	print "Average time", time_total/i
 
 
 

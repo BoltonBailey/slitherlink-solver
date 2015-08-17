@@ -41,31 +41,31 @@ class SlitherlinkPuzzle(object):
 		# tuple of pairs representing the coordinates of the vertices, with 
 		# the upper left first.
 
-		self.lines = []
+		self.list_of_lines = []
 
 		# First the horizontal lines
 		for i in range(self.rows+1):
 			for j in range(self.cols):
-				self.lines.append(((i,j),(i,j+1)))
+				self.list_of_lines.append(((i,j),(i,j+1)))
 		# Then the vertical
 		for i in range(self.rows):
 			for j in range(self.cols+1):
-				self.lines.append(((i,j),(i+1,j)))
+				self.list_of_lines.append(((i,j),(i+1,j)))
 
-		self.lines = sorted(self.lines)
+		self.list_of_lines = sorted(self.list_of_lines)
 
 		# We now put these in set form, for quick membership tests
 
-		self.set_of_lines = set(self.lines)
+		self.set_of_lines = set(self.list_of_lines)
 
 
 		# We now create lists and sets for vertices and squares
 
-		self.vertices = [(i, j) for i in range(self.rows+1) for j in range(self.cols+1)]
-		self.set_of_vertices = set(self.vertices)
+		self.list_of_vertices = [(i, j) for i in range(self.rows+1) for j in range(self.cols+1)]
+		self.set_of_vertices = set(self.list_of_vertices)
 
-		self.squares = [(i, j) for i in range(self.rows) for j in range(self.cols)]
-		self.set_of_squares = set(self.squares)
+		self.list_of_squares = [(i, j) for i in range(self.rows) for j in range(self.cols)]
+		self.set_of_squares = set(self.list_of_squares)
 
 	def prettyprint(self, solution):
 		""" A pretty printer for displaying a puzzle instance, along with a 
@@ -141,7 +141,7 @@ class SlitherlinkPuzzle(object):
 
 		solution = self.add_solve()
 
-		assert len(solution) == len(self.lines)
+		assert len(solution) == len(self.list_of_lines)
 
 		print "Solution found."
 
@@ -157,100 +157,98 @@ class SlitherlinkPuzzle(object):
 
 		solution = {}
 
+		# A map from lines to lists of groups that that line touches.
+		line_group_map = {line : set() for line in self.list_of_lines}
 
-		boxes = []
+		# A set of groups that have new information. 
+		# (A line touching them has been filled since the last examination)
+		groups_to_check = set()
 
-		crosses = set(self.squares)
+		# Add some initial groups
+		all_groups = set()
 
+		for i, j in self.list_of_squares:
+			# Add diagonals
+			diagonal = []
+
+			if self.board[i][j] != None:
+				if (i-1, j+1) not in self.set_of_squares or self.board[i-1][j+1] == None:
+					while (i, j) in self.set_of_squares and self.board[i][j] != None:
+						diagonal.extend(get_box((i,j),1))
+						i += 1
+						j -= 1
+			all_groups.add(frozenset(diagonal))
+
+		for i, j in self.list_of_squares:
+			# Add diagonals
+			diagonal = []
+
+			if self.board[i][j] != None:
+				if (i-1, j-1) not in self.set_of_squares or self.board[i-1][j-1] == None:
+					while (i, j) in self.set_of_squares and self.board[i][j] != None:
+						diagonal.extend(get_box((i,j),1))
+						i += 1
+						j += 1
+			all_groups.add(frozenset(diagonal))
+
+
+
+		for group in all_groups:
+
+			groups_to_check.add(group)
+
+			for line in group:
+				for vertex in line:
+					for l in get_adjacent_lines(vertex):
+						if l in self.set_of_lines:
+							line_group_map[l].add(group)
+
+
+		largest_box_add = 0
 		while True:
 
-			if crosses:
+			if len(groups_to_check) == 0:
+				largest_box_add += 1
+				for vertex in self.list_of_vertices:
+					group = frozenset(get_box(vertex, largest_box_add))
+					groups_to_check.add(group)
+					for line in group:
+						for vertex in line:
+							for l in get_adjacent_lines(vertex):
+								if l in self.set_of_lines:
+									line_group_map[l].add(group)				
 
-				square = crosses.pop()
-					
-				examine = get_box(square, 1)
-				nearby = set()
+			# Get a new group
+			current_group = set(groups_to_check.pop())
 
-				i, j = square
-				while (i,j) in self.set_of_squares and self.board[i][j] != None:
-					examine.extend(get_box((i,j), 1))
-					nearby.add((i,j+1))
-					nearby.add((i+1,j))
-					nearby.add((i,j-1))
-					nearby.add((i-1,j))
-					i += 1
-					j += 1
+			lines_to_remove = []
+			for line in current_group:
+				if line in solution:
+					lines_to_remove.append(line)
 
-				i, j = square
-				while (i,j) in self.set_of_squares and self.board[i][j] != None:
-					examine.extend(get_box((i,j), 1))
-					nearby.add((i,j+1))
-					nearby.add((i+1,j))
-					nearby.add((i,j-1))
-					nearby.add((i-1,j))
-					i -= 1
-					j += 1
+			for line in lines_to_remove:
+				current_group.remove(line)
 
+			# Current group now has no lines in the determined solution.
 
-				start_len = len(solution)
+			initial = len(current_group)
 
-				self.group_mutate(solution, examine)
-				self.box_mutate(solution, square, 2)
+			self.group_mutate(solution, current_group)
 
-				if len(solution) > start_len:
-					print len(crosses)
-					self.prettyprint(solution)
-					for s in nearby:
-						crosses.add(s)
-
-				if len(solution) == len(self.lines):
-					return solution				
-
-
-			# We find the smallest box length we can
-			side = 0
-			while side < len(boxes) and len(boxes[side]) == 0:
-				side += 1
-
-			# If we have no nonempty box set for any size, add a set
-			if side == len(boxes):
-				boxes.append(set([v for v in self.vertices]))
-
-			# Now, remove a box
-			vertex = boxes[side].pop()
-			i, j = vertex
-
-			start_len = len(solution)
-
-			self.box_mutate(solution, vertex, side)
-
-			if len(solution) == len(self.lines):
+			if len(solution) == len(self.list_of_lines):
 				return solution
 
+			if len(solution) > initial:
+				pass
+				#self.prettyprint(solution)
 
+			# Check group for new determined lines
 
-			if len(solution) > start_len:
-
-				print side, vertex
-				for b in boxes:
-					print len(b)
-				
-				self.prettyprint(solution)
-
-				for di in range(-1, side):
-
-					crosses.add((i+di, j-1))
-					crosses.add((i+di, j+side))
-				
-				for dj in range(-1, side):
-
-					crosses.add((i-1, j+dj))
-					crosses.add((i+side, j+dj))
-
-
-			
-
-
+			for line in current_group:
+				if line in solution:
+					# Put all groups touching this line in the to be checked set.
+					for group in line_group_map[line]:
+						groups_to_check.add(group)
 			
 
 
@@ -265,7 +263,7 @@ class SlitherlinkPuzzle(object):
 		for line in line_group:
 			if line in self.set_of_lines and line not in solution:
 				valid_lines.append(line)
-		line_group = valid_lines
+		line_group = sorted(valid_lines)
 		
 		extended_solutions = []
 		partial_solutions = [dict(solution)] 
@@ -319,7 +317,6 @@ class SlitherlinkPuzzle(object):
 			if line in proven_solution:
 				solution[line] = proven_solution[line]
 
-
 	def iterative_line_violation(self, partial_solution, line):
 		if self.line_violation(partial_solution, line):
 			return True
@@ -334,15 +331,15 @@ class SlitherlinkPuzzle(object):
 		""" This method, given a complete solution, checks if the complete 
 		solution breaks any rules. """
 
-		assert len(complete_solution) == len(self.lines)
+		assert len(complete_solution) == len(self.list_of_lines)
 
 		# Test intersections for no dead ends or forks
-		for vertex in self.vertices:
+		for vertex in self.list_of_vertices:
 			if self.vertex_violation(complete_solution, vertex):
 				return True
 
 		# Test squares for right number of lines
-		for square in self.squares:
+		for square in self.list_of_squares:
 			if self.square_violation(complete_solution, square):
 				return True
 
@@ -350,7 +347,7 @@ class SlitherlinkPuzzle(object):
 
 		# Find a filled line
 
-		for line in self.lines:
+		for line in self.list_of_lines:
 			if complete_solution[line]:
 				break
 		
@@ -532,15 +529,15 @@ class SlitherlinkPuzzle(object):
 			if l not in loop_solution:
 				loop_solution[l] = False
 
-		assert len(loop_solution) == len(self.lines)
+		assert len(loop_solution) == len(self.list_of_lines)
 
 		# Test vertices for no dead ends or forks
-		for vertex in self.vertices:
+		for vertex in self.list_of_vertices:
 			if self.vertex_violation(loop_solution, vertex):
 				return True
 
 		# Test squares for right number of lines
-		for square in self.squares:
+		for square in self.list_of_squares:
 			if self.square_violation(loop_solution, square):
 				return True
 
